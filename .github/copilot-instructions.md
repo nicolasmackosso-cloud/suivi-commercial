@@ -1,0 +1,4 @@
+- [ ] This workspace contains a Next.js sales tracking application.
+- [ ] The project lives in the root directory and uses the App Router with Tailwind CSS.
+- [ ] The main application page is `app/page.tsx`.
+- [ ] The README contains instructions for running the development server.
