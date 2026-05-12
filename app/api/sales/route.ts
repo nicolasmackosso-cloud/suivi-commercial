@@ -1,52 +1,107 @@
 import { NextRequest, NextResponse } from "next/server";
-
-// Simulated in-memory database for demo
-const sales: Array<{
-  id: string;
-  agent: string;
-  neighborhood: string;
-  date: string;
-}> = [];
+import { supabase } from "@/lib/supabase";
 
 export async function GET() {
-  return NextResponse.json(sales);
+  try {
+    const { data, error } = await supabase
+      .from("sales")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      throw error;
+    }
+
+    return NextResponse.json(data || []);
+  } catch (error) {
+    console.error("Error fetching sales:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch sales" },
+      { status: 500 }
+    );
+  }
 }
 
 export async function POST(request: NextRequest) {
-  const body = await request.json();
+  try {
+    const body = await request.json();
 
-  const newSale = {
-    id: crypto.randomUUID(),
-    agent: body.agent,
-    neighborhood: body.neighborhood,
-    date: body.date,
-  };
+    const { data, error } = await supabase
+      .from("sales")
+      .insert([
+        {
+          agent: body.agent,
+          neighborhood: body.neighborhood,
+          date: body.date,
+        },
+      ])
+      .select()
+      .single();
 
-  sales.push(newSale);
-  return NextResponse.json(newSale, { status: 201 });
+    if (error) {
+      throw error;
+    }
+
+    return NextResponse.json(data, { status: 201 });
+  } catch (error) {
+    console.error("Error creating sale:", error);
+    return NextResponse.json(
+      { error: "Failed to create sale" },
+      { status: 500 }
+    );
+  }
 }
 
 export async function PUT(request: NextRequest) {
-  const body = await request.json();
-  const index = sales.findIndex((s) => s.id === body.id);
+  try {
+    const body = await request.json();
 
-  if (index === -1) {
-    return NextResponse.json({ error: "Sale not found" }, { status: 404 });
+    const { data, error } = await supabase
+      .from("sales")
+      .update({
+        agent: body.agent,
+        neighborhood: body.neighborhood,
+        date: body.date,
+      })
+      .eq("id", body.id)
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error("Error updating sale:", error);
+    return NextResponse.json(
+      { error: "Failed to update sale" },
+      { status: 500 }
+    );
   }
-
-  sales[index] = { ...sales[index], ...body };
-  return NextResponse.json(sales[index]);
 }
 
 export async function DELETE(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const id = searchParams.get("id");
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
 
-  const index = sales.findIndex((s) => s.id === id);
-  if (index === -1) {
-    return NextResponse.json({ error: "Sale not found" }, { status: 404 });
+    if (!id) {
+      return NextResponse.json({ error: "ID is required" }, { status: 400 });
+    }
+
+    const { error } = await supabase.from("sales").delete().eq("id", id);
+
+    if (error) {
+      throw error;
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting sale:", error);
+    return NextResponse.json(
+      { error: "Failed to delete sale" },
+      { status: 500 }
+    );
   }
-
-  sales.splice(index, 1);
-  return NextResponse.json({ success: true });
 }
