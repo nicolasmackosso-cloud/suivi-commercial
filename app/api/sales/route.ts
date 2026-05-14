@@ -1,11 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
+import { createAuthenticatedSupabase } from "@/lib/supabase";
+import { cookies } from "next/headers";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const cookieStore = await cookies();
+    const accessToken = cookieStore.get("sb-access-token")?.value;
+
+    if (!accessToken) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const supabase = createAuthenticatedSupabase(accessToken);
+    const { data: { user } } = await supabase.auth.getUser(accessToken);
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { data, error } = await supabase
       .from("sales")
       .select("*")
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -24,6 +40,20 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const cookieStore = await cookies();
+    const accessToken = cookieStore.get("sb-access-token")?.value;
+
+    if (!accessToken) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const supabase = createAuthenticatedSupabase(accessToken);
+    const { data: { user } } = await supabase.auth.getUser(accessToken);
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await request.json();
 
     const { data, error } = await supabase
@@ -33,6 +63,7 @@ export async function POST(request: NextRequest) {
           agent: body.agent,
           neighborhood: body.neighborhood,
           date: body.date,
+          user_id: user.id,
         },
       ])
       .select()
@@ -54,6 +85,20 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    const cookieStore = await cookies();
+    const accessToken = cookieStore.get("sb-access-token")?.value;
+
+    if (!accessToken) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const supabase = createAuthenticatedSupabase(accessToken);
+    const { data: { user } } = await supabase.auth.getUser(accessToken);
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await request.json();
 
     const { data, error } = await supabase
@@ -64,6 +109,7 @@ export async function PUT(request: NextRequest) {
         date: body.date,
       })
       .eq("id", body.id)
+      .eq("user_id", user.id)
       .select()
       .single();
 
@@ -83,6 +129,20 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const cookieStore = await cookies();
+    const accessToken = cookieStore.get("sb-access-token")?.value;
+
+    if (!accessToken) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const supabase = createAuthenticatedSupabase(accessToken);
+    const { data: { user } } = await supabase.auth.getUser(accessToken);
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
 
@@ -90,7 +150,11 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "ID is required" }, { status: 400 });
     }
 
-    const { error } = await supabase.from("sales").delete().eq("id", id);
+    const { error } = await supabase
+      .from("sales")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", user.id);
 
     if (error) {
       throw error;

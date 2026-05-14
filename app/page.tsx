@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useAuth } from "@/components/AuthProvider";
+import html2canvas from "html2canvas";
+import * as XLSX from "xlsx";
 
 type Sale = {
   id: string;
@@ -17,17 +20,26 @@ const defaultForm = {
 };
 
 export default function Home() {
+  const { user } = useAuth();
   const [sales, setSales] = useState<Sale[]>([]);
   const [form, setForm] = useState({ ...defaultForm });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch sales from API
   const fetchSales = async () => {
     try {
       setLoading(true);
-      const response = await fetch("/api/sales");
+      const { data: { session } } = await import("@/lib/supabase").then(({ supabase }) =>
+        supabase.auth.getSession()
+      );
+
+      const response = await fetch("/api/sales", {
+        headers: {
+          Authorization: `Bearer ${session?.access_token || ""}`,
+        },
+      });
+
       if (!response.ok) throw new Error("Failed to fetch sales");
       const data = await response.json();
       setSales(data);
@@ -40,8 +52,10 @@ export default function Home() {
   };
 
   useEffect(() => {
-    fetchSales();
-  }, []);
+    if (user) {
+      fetchSales();
+    }
+  }, [user]);
 
   const agents = Array.from(new Set(sales.map((s) => s.agent))).sort();
   const dates = Array.from(new Set(sales.map((s) => s.date)))
@@ -57,6 +71,10 @@ export default function Home() {
     if (!form.agent || !form.neighborhood || !form.date) return;
 
     try {
+      const { data: { session } } = await import("@/lib/supabase").then(({ supabase }) =>
+        supabase.auth.getSession()
+      );
+
       const payload = {
         agent: form.agent.trim(),
         neighborhood: form.neighborhood.trim(),
@@ -67,7 +85,10 @@ export default function Home() {
         // Update existing sale
         const response = await fetch("/api/sales", {
           method: "PUT",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.access_token || ""}`,
+          },
           body: JSON.stringify({ ...payload, id: editingId }),
         });
         if (!response.ok) throw new Error("Failed to update sale");
@@ -75,7 +96,10 @@ export default function Home() {
         // Create new sale
         const response = await fetch("/api/sales", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.access_token || ""}`,
+          },
           body: JSON.stringify(payload),
         });
         if (!response.ok) throw new Error("Failed to create sale");
@@ -101,8 +125,15 @@ export default function Home() {
 
   const handleDelete = async (id: string) => {
     try {
+      const { data: { session } } = await import("@/lib/supabase").then(({ supabase }) =>
+        supabase.auth.getSession()
+      );
+
       const response = await fetch(`/api/sales?id=${id}`, {
         method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${session?.access_token || ""}`,
+        },
       });
       if (!response.ok) throw new Error("Failed to delete sale");
       await fetchSales();
@@ -116,13 +147,45 @@ export default function Home() {
     }
   };
 
+  const downloadAsImage = async () => {
+    const table = document.querySelector("table");
+    if (!table) return;
+
+    try {
+      const canvas = await html2canvas(table);
+      const link = document.createElement("a");
+      link.download = "tableau-ventes.png";
+      link.href = canvas.toDataURL();
+      link.click();
+    } catch (err) {
+      console.error("Error downloading image:", err);
+      alert("Erreur lors du téléchargement de l'image");
+    }
+  };
+
+  const downloadAsExcel = () => {
+    const ws = XLSX.utils.json_to_sheet(sales);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Ventes");
+    XLSX.writeFile(wb, "ventes.xlsx");
+  };
+
+  const handleLogout = async () => {
+    try {
+      const { supabase } = await import("@/lib/supabase");
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
+  };
+
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
       <nav className="border-b border-slate-200 bg-white shadow-sm">
         <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold text-slate-900">Suivi commercial</h1>
-            <div className="flex gap-2 flex-wrap justify-end">
+            <div className="flex gap-2 flex-wrap justify-end items-center">
               <Link
                 href="/"
                 className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white"
@@ -141,6 +204,18 @@ export default function Home() {
               >
                 Classement
               </Link>
+              <Link
+                href="/parametres"
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+              >
+                Paramètres
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50"
+              >
+                Déconnexion
+              </button>
             </div>
           </div>
         </div>
@@ -160,12 +235,30 @@ export default function Home() {
         ) : (
           <>
             <div className="mb-8">
-              <h2 className="text-3xl font-bold text-slate-900">
-                Tableau croisé
-              </h2>
-              <p className="mt-2 text-lg text-slate-600">
-                Suivez les ventes par commercial, quartier et date
-              </p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-3xl font-bold text-slate-900">
+                    Tableau croisé
+                  </h2>
+                  <p className="mt-2 text-lg text-slate-600">
+                    Suivez les ventes par commercial, quartier et date
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={downloadAsImage}
+                    className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  >
+                    📷 Télécharger Image
+                  </button>
+                  <button
+                    onClick={downloadAsExcel}
+                    className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  >
+                    📊 Télécharger Excel
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div className="grid gap-8 lg:grid-cols-3">

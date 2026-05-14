@@ -5,10 +5,27 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+export function createAuthenticatedSupabase(accessToken: string) {
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    global: {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    },
+  });
+}
+
 export type Sale = {
   id: string;
   agent: string;
   neighborhood: string;
   date: string;
+  user_id?: string;
   created_at?: string;
+};
+
+export type UserProfile = {
+  id: string;
+  email: string;
+  team_name?: string;
 };
