@@ -20,6 +20,7 @@ export type Sale = {
   agent: string;
   neighborhood: string;
   date: string;
+  in_zone: boolean;
   user_id?: string;
   created_at?: string;
 };

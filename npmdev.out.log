@@ -1,0 +1,39 @@
+
+> suivi_commercial@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.4 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.1.72:3000
+- Environments: .env.local
+✓ Ready in 3.2s
+Creating turbopack project {
+  dir: 'C:\\Users\\win\\Desktop\\Suivi commercial\\suivi_commercial',
+  testMode: true
+}
+
+ GET / 200 in 11.4s (next.js: 4.3s, application-code: 7.1s)
+ GET / 200 in 4.8s (next.js: 3.8s, application-code: 973ms)
+ GET / 200 in 3.5s (next.js: 1568ms, application-code: 1948ms)
+ GET / 200 in 509ms (next.js: 125ms, application-code: 384ms)
+ GET /api/sales 200 in 4.4s (next.js: 2.4s, application-code: 2.1s)
+ GET /api/sales 200 in 571ms (next.js: 13ms, application-code: 558ms)
+ GET /api/sales 200 in 538ms (next.js: 15ms, application-code: 523ms)
+ GET /api/sales 200 in 619ms (next.js: 15ms, application-code: 604ms)
+ POST /api/sales 201 in 753ms (next.js: 12ms, application-code: 742ms)
+ GET /api/sales 200 in 535ms (next.js: 6ms, application-code: 529ms)
+ POST /api/sales 201 in 896ms (next.js: 9ms, application-code: 888ms)
+ GET /api/sales 200 in 530ms (next.js: 7ms, application-code: 523ms)
+ GET /synthese 200 in 858ms (next.js: 409ms, application-code: 449ms)
+ GET /api/sales 200 in 780ms (next.js: 33ms, application-code: 746ms)
+ GET /api/sales 200 in 957ms (next.js: 296ms, application-code: 661ms)
+ GET /classement 200 in 303ms (next.js: 220ms, application-code: 83ms)
+ GET /api/sales 200 in 729ms (next.js: 7ms, application-code: 722ms)
+ GET /api/sales 200 in 537ms (next.js: 14ms, application-code: 523ms)
+ GET / 200 in 67ms (next.js: 11ms, application-code: 56ms)
+ GET /api/sales 200 in 685ms (next.js: 43ms, application-code: 642ms)
+ GET /api/sales 200 in 566ms (next.js: 37ms, application-code: 529ms)
+ GET /api/sales 200 in 702ms (next.js: 6ms, application-code: 696ms)
+ GET /api/sales 200 in 517ms (next.js: 4ms, application-code: 512ms)
+✓ Compiled in 7.3s
+✓ Compiled in 1982ms

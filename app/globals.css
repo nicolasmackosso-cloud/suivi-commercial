@@ -4,6 +4,10 @@
   color-scheme: light;
   color: #0f172a;
   background: #f8fafc;
+  --th-primary: #0f172a;
+  --th-hover: #334155;
+  --th-light: #f1f5f9;
+  --th-light-text: #475569;
 }
 
 @theme inline {
